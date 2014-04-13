@@ -1,0 +1,43 @@
+Option Explicit
+'Script written by <Junichiro Horikawa>
+'Script copyrighted by <Junichiro Horikawa>
+'Script version 2010年10月29日 1:12:39
+
+Call Main()
+Sub Main()
+	Dim strObject, arrObjects
+	Dim arrItems, arrDefaults, arrResults, blnVal
+	
+	arrObjects = Rhino.GetObjects("Select Object",65536,,True)
+	If Not IsArray(arrObjects) Then Exit Sub
+	arrItems = Array( "DeleteHatch", "NO", "YES")
+	arrDefaults = array(False)
+	arrResults = Rhino.GetBoolean("Option", arrItems, arrDefaults)
+	If Not IsArray(arrResults) Then Exit Sub
+	
+	Rhino.EnableRedraw(False)
+
+	For Each strObject In arrObjects
+		Dim strCopyObject, arrBoundary, arrCurve, strBoundary
+		If Rhino.isHatch(strObject) Then
+			If arrResults(0) = False Then
+				strCopyObject = Rhino.CopyObject(strObject)
+			Else
+				strCopyObject = strObject
+			End If
+			Rhino.HatchPattern strCopyObject, "SOLID"
+			Rhino.Redraw()
+			arrBoundary = Rhino.ExplodeHatch(strCopyObject)
+			If IsArray(arrBoundary) Then
+				For Each strBoundary In arrBoundary
+					arrCurve = Rhino.DuplicateSurfaceBorder (strBoundary)
+				Next
+				Rhino.DeleteObject(strCopyObject)
+				Rhino.DeleteObjects(arrBoundary)
+			End If
+		End If
+
+	Next
+	
+	Rhino.EnableRedraw(True)
+End Sub
